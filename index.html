@@ -1,126 +1,741 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" ng-app="rogueGame">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello World</title>
+    <title>Neon Rogue: Starfall Arena</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Inter:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
-        color-scheme: light;
+        color-scheme: dark;
         font-family: "Inter", system-ui, -apple-system, sans-serif;
       }
 
-      * {
-        box-sizing: border-box;
+      body {
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #1b2847 0%, #0a0f1c 55%, #05070d 100%);
+        color: #e2e8f0;
       }
 
-      body {
-        margin: 0;
-        min-height: 100vh;
+      .glow {
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+      }
+
+      .title {
+        font-family: "Orbitron", sans-serif;
+        letter-spacing: 0.08em;
+      }
+
+      .panel {
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 18px;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        gap: 0.4rem;
+        padding: 1.2rem;
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9));
+      }
+
+      .cell {
+        aspect-ratio: 1 / 1;
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(circle at top, #f0f4ff 0%, #ffffff 45%, #eef7ff 100%);
-        color: #0f172a;
+        font-size: 1.2rem;
+        position: relative;
+        overflow: hidden;
       }
 
-      .card {
-        width: min(720px, 90vw);
-        padding: 3.5rem 3rem;
-        border-radius: 28px;
-        background: rgba(255, 255, 255, 0.78);
-        backdrop-filter: blur(18px);
-        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+      .cell::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 65%);
+        opacity: 0;
+        transition: opacity 0.2s ease;
       }
 
-      .badge {
+      .cell.highlight::after {
+        opacity: 1;
+      }
+
+      .player {
+        background: linear-gradient(135deg, rgba(34, 211, 238, 0.35), rgba(59, 130, 246, 0.35));
+        border: 1px solid rgba(34, 211, 238, 0.6);
+      }
+
+      .enemy {
+        background: linear-gradient(135deg, rgba(248, 113, 113, 0.3), rgba(239, 68, 68, 0.35));
+        border: 1px solid rgba(248, 113, 113, 0.6);
+      }
+
+      .loot {
+        background: linear-gradient(135deg, rgba(250, 204, 21, 0.25), rgba(234, 179, 8, 0.35));
+        border: 1px solid rgba(250, 204, 21, 0.6);
+      }
+
+      .shielded {
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.8) inset;
+      }
+
+      .stat-pill {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.85rem;
+      }
+
+      .log {
+        max-height: 220px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+      }
+
+      .mini-bar {
+        height: 8px;
+        background: rgba(148, 163, 184, 0.3);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .mini-bar span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #38bdf8, #22d3ee);
+      }
+
+      .legend span {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        padding: 0.45rem 0.9rem;
-        border-radius: 999px;
-        background: #111827;
-        color: #f8fafc;
+        gap: 0.35rem;
+        margin-right: 0.75rem;
       }
 
-      h1 {
-        font-size: clamp(2.5rem, 4vw, 4rem);
-        margin: 1.5rem 0 0.75rem;
-        line-height: 1.1;
+      .legend .dot {
+        width: 0.7rem;
+        height: 0.7rem;
+        border-radius: 50%;
+        display: inline-block;
       }
 
-      p {
-        font-size: 1.1rem;
-        line-height: 1.6;
-        color: #475569;
-        margin: 0 0 2rem;
+      .floating-card {
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 16px;
+        padding: 1rem;
       }
 
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-      }
-
-      .button {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        padding: 0.9rem 1.6rem;
-        border-radius: 999px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .button.primary {
-        background: linear-gradient(120deg, #2563eb, #22d3ee);
-        color: white;
-        box-shadow: 0 12px 25px rgba(37, 99, 235, 0.3);
-      }
-
-      .button.secondary {
-        border: 1px solid #cbd5f5;
-        color: #1e293b;
-        background: white;
-      }
-
-      .button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-      }
-
-      .footer {
-        margin-top: 2.5rem;
-        font-size: 0.9rem;
-        color: #94a3b8;
+      .accent {
+        color: #38bdf8;
       }
     </style>
   </head>
-  <body>
-    <main class="card">
-      <span class="badge">Hello World</span>
-      <h1>Build something delightful.</h1>
-      <p>
-        This is a modern, minimal landing page starter. Clean typography, soft glassmorphism, and
-        subtle gradients make “Hello World” feel like a fresh product launch.
-      </p>
-      <div class="actions">
-        <a class="button primary" href="https://www.example.com">Get started</a>
-        <a class="button secondary" href="https://www.example.com">View docs</a>
+  <body ng-controller="GameController as vm" class="py-4">
+    <div class="container">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <h1 class="title mb-1">Neon Rogue: Starfall Arena</h1>
+          <p class="mb-0 text-secondary">
+            Survive waves, collect relics, and level up every time you clear the arena.
+          </p>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-info text-dark fw-semibold" ng-click="vm.restart()">
+            Restart Run
+          </button>
+          <button class="btn btn-outline-light" ng-click="vm.togglePause()">
+            {{ vm.paused ? 'Resume' : 'Pause' }}
+          </button>
+        </div>
       </div>
-      <div class="footer">Designed for a crisp first impression.</div>
-    </main>
+
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="panel p-3 glow">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <div>
+                <div class="text-uppercase text-info small">Level {{ vm.level }}</div>
+                <div class="fs-5 fw-semibold">Wave {{ vm.wave }} · Arena {{ vm.biome }}</div>
+              </div>
+              <div class="legend text-secondary small">
+                <span><span class="dot bg-info"></span>Hero</span>
+                <span><span class="dot bg-danger"></span>Enemy</span>
+                <span><span class="dot bg-warning"></span>Relic</span>
+              </div>
+            </div>
+            <div class="board">
+              <div
+                class="cell"
+                ng-repeat="cell in vm.board track by $index"
+                ng-class="{
+                  player: cell.type === 'player',
+                  enemy: cell.type === 'enemy',
+                  loot: cell.type === 'loot',
+                  highlight: cell.highlight,
+                  shielded: cell.shielded
+                }"
+              >
+                <span ng-if="cell.type === 'player'">⚡</span>
+                <span ng-if="cell.type === 'enemy'">👾</span>
+                <span ng-if="cell.type === 'loot'">💠</span>
+              </div>
+            </div>
+            <div class="mt-3 d-flex flex-wrap gap-3 text-secondary small">
+              <span>Move: WASD / Arrow Keys</span>
+              <span>Shoot: Space</span>
+              <span>Dash: Shift</span>
+              <span>Bomb: B</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="panel p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <div class="text-uppercase text-info small">Pilot</div>
+                <div class="fs-5 fw-semibold">{{ vm.player.name }}</div>
+              </div>
+              <span class="stat-pill">Combo x{{ vm.player.combo }}</span>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small">
+                <span>Hull Integrity</span>
+                <span>{{ vm.player.health }} / {{ vm.player.maxHealth }}</span>
+              </div>
+              <div class="mini-bar">
+                <span style="width: {{ vm.player.health / vm.player.maxHealth * 100 }}%"></span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small">
+                <span>XP</span>
+                <span>{{ vm.player.xp }} / {{ vm.player.xpToLevel }}</span>
+              </div>
+              <div class="mini-bar">
+                <span style="width: {{ vm.player.xp / vm.player.xpToLevel * 100 }}%"></span>
+              </div>
+            </div>
+            <div class="row g-2 text-center mb-3">
+              <div class="col-4">
+                <div class="floating-card">
+                  <div class="text-uppercase text-secondary small">Attack</div>
+                  <div class="fw-semibold">{{ vm.player.attack }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="floating-card">
+                  <div class="text-uppercase text-secondary small">Range</div>
+                  <div class="fw-semibold">{{ vm.player.range }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="floating-card">
+                  <div class="text-uppercase text-secondary small">Armor</div>
+                  <div class="fw-semibold">{{ vm.player.armor }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <span class="stat-pill">Ammo: {{ vm.player.ammo }}</span>
+              <span class="stat-pill">Shield: {{ vm.player.shield }}%</span>
+              <span class="stat-pill">Crit: {{ vm.player.crit }}%</span>
+              <span class="stat-pill">Dodge: {{ vm.player.dodge }}%</span>
+            </div>
+          </div>
+
+          <div class="panel p-4 mb-4">
+            <h5 class="mb-3">Relics & Mods</h5>
+            <div class="d-flex flex-wrap gap-2">
+              <span class="badge text-bg-info" ng-repeat="relic in vm.player.relics track by $index">
+                {{ relic }}
+              </span>
+              <span class="text-secondary" ng-if="vm.player.relics.length === 0">
+                No relics collected yet.
+              </span>
+            </div>
+            <div class="mt-3">
+              <div class="small text-secondary mb-2">Active Perks</div>
+              <ul class="list-unstyled mb-0">
+                <li ng-repeat="perk in vm.player.perks track by $index">• {{ perk }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="panel p-4">
+            <h5 class="mb-3">Combat Feed</h5>
+            <div class="log">
+              <div ng-repeat="entry in vm.log track by $index">{{ entry }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4 mt-2">
+        <div class="col-lg-8">
+          <div class="panel p-4">
+            <h5 class="mb-3">Upgrade Bay</h5>
+            <div class="row g-3">
+              <div class="col-md-4" ng-repeat="upgrade in vm.upgrades track by $index">
+                <div class="floating-card h-100 d-flex flex-column">
+                  <div class="fw-semibold">{{ upgrade.name }}</div>
+                  <div class="text-secondary small mb-3">{{ upgrade.description }}</div>
+                  <button class="btn btn-sm btn-outline-info mt-auto" ng-click="vm.pickUpgrade(upgrade)">
+                    Install
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="panel p-4 h-100">
+            <h5 class="mb-3">Mission Intel</h5>
+            <ul class="list-unstyled mb-2">
+              <li>Enemies Remaining: <span class="accent">{{ vm.enemies.length }}</span></li>
+              <li>Relics on Field: <span class="accent">{{ vm.loot.length }}</span></li>
+              <li>Next Reward: <span class="accent">{{ vm.nextReward }}</span></li>
+              <li>Threat Level: <span class="accent">{{ vm.threatLevel }}</span></li>
+            </ul>
+            <div class="text-secondary small">
+              Clear the arena to level up. Every level unlocks a random surprise: drones, warp fields,
+              pulse bombs, or secret healing fountains.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script>
+      angular
+        .module("rogueGame", [])
+        .controller("GameController", function ($document, $interval, $scope) {
+          const vm = this;
+          const size = 9;
+          const keyState = new Set();
+
+          vm.biomes = ["Nebula", "Citadel", "Wasteland", "Synthspire", "Void Rift"];
+          vm.biome = vm.biomes[0];
+          vm.nextReward = "Relic Cache";
+          vm.threatLevel = "Alpha";
+          vm.paused = false;
+
+          vm.player = {
+            name: "Nova",
+            x: 4,
+            y: 4,
+            health: 100,
+            maxHealth: 100,
+            attack: 16,
+            range: 3,
+            armor: 2,
+            ammo: 8,
+            shield: 20,
+            crit: 12,
+            dodge: 8,
+            xp: 0,
+            xpToLevel: 100,
+            combo: 1,
+            relics: [],
+            perks: ["Auto-Repair", "Scout Drone", "Pulse Surge"],
+          };
+
+          vm.level = 1;
+          vm.wave = 1;
+          vm.log = ["Welcome to Starfall Arena."];
+          vm.enemies = [];
+          vm.loot = [];
+          vm.upgrades = [];
+          vm.board = [];
+
+          const upgradePool = [
+            {
+              name: "Photon Burst",
+              description: "Shots chain to a nearby enemy.",
+              apply: () => {
+                vm.player.attack += 3;
+                vm.player.perks.push("Chain Lightning");
+              },
+            },
+            {
+              name: "Nano Shield",
+              description: "Increase shield capacity by 10%.",
+              apply: () => {
+                vm.player.shield += 10;
+                vm.player.maxHealth += 10;
+                vm.player.health += 10;
+              },
+            },
+            {
+              name: "Vector Thrusters",
+              description: "Dash range increases and dodge improves.",
+              apply: () => {
+                vm.player.dodge += 6;
+                vm.player.range += 1;
+              },
+            },
+            {
+              name: "Ammo Synth",
+              description: "Regenerate ammo every wave.",
+              apply: () => {
+                vm.player.ammo += 4;
+                vm.player.perks.push("Ammo Regen");
+              },
+            },
+            {
+              name: "Overclock",
+              description: "Critical chance +8%.",
+              apply: () => {
+                vm.player.crit += 8;
+              },
+            },
+            {
+              name: "Battle Medic",
+              description: "Heal 20 and raise armor.",
+              apply: () => {
+                vm.player.armor += 2;
+                vm.player.health = Math.min(vm.player.health + 20, vm.player.maxHealth);
+              },
+            },
+          ];
+
+          const relicPool = [
+            "Temporal Loop",
+            "Gravity Lens",
+            "Void Orchid",
+            "Astral Compass",
+            "Echo Prism",
+          ];
+
+          vm.spawnWave = () => {
+            vm.enemies = [];
+            const count = 3 + vm.wave;
+            for (let i = 0; i < count; i += 1) {
+              const position = randomOpenCell();
+              vm.enemies.push({
+                id: i,
+                x: position.x,
+                y: position.y,
+                health: 20 + vm.wave * 6,
+                attack: 6 + vm.wave * 2,
+              });
+            }
+            vm.loot = [];
+            vm.loot.push(randomOpenCell());
+            vm.biome = vm.biomes[(vm.wave - 1) % vm.biomes.length];
+            vm.nextReward = upgradePool[Math.floor(Math.random() * upgradePool.length)].name;
+            vm.threatLevel = ["Alpha", "Beta", "Gamma", "Omega"][Math.min(vm.wave - 1, 3)];
+            vm.log.unshift(`Wave ${vm.wave} deployed. Enemies inbound.`);
+            updateBoard();
+          };
+
+          vm.pickUpgrade = (upgrade) => {
+            upgrade.apply();
+            vm.player.relics.push(relicPool[Math.floor(Math.random() * relicPool.length)]);
+            vm.log.unshift(`Installed ${upgrade.name}. Relic acquired!`);
+            refreshUpgrades();
+          };
+
+          vm.restart = () => {
+            vm.level = 1;
+            vm.wave = 1;
+            vm.player.x = 4;
+            vm.player.y = 4;
+            vm.player.health = 100;
+            vm.player.maxHealth = 100;
+            vm.player.attack = 16;
+            vm.player.range = 3;
+            vm.player.armor = 2;
+            vm.player.ammo = 8;
+            vm.player.shield = 20;
+            vm.player.crit = 12;
+            vm.player.dodge = 8;
+            vm.player.xp = 0;
+            vm.player.xpToLevel = 100;
+            vm.player.combo = 1;
+            vm.player.relics = [];
+            vm.player.perks = ["Auto-Repair", "Scout Drone", "Pulse Surge"];
+            vm.log = ["Run restarted. Good hunting."];
+            vm.biome = vm.biomes[0];
+            refreshUpgrades();
+            vm.spawnWave();
+          };
+
+          vm.togglePause = () => {
+            vm.paused = !vm.paused;
+            vm.log.unshift(vm.paused ? "Paused." : "Resumed." );
+          };
+
+          function refreshUpgrades() {
+            vm.upgrades = shuffle([...upgradePool]).slice(0, 3);
+          }
+
+          function randomOpenCell() {
+            let x = 0;
+            let y = 0;
+            let occupied = true;
+            while (occupied) {
+              x = Math.floor(Math.random() * size);
+              y = Math.floor(Math.random() * size);
+              occupied =
+                (x === vm.player.x && y === vm.player.y) ||
+                vm.enemies.some((enemy) => enemy.x === x && enemy.y === y);
+            }
+            return { x, y };
+          }
+
+          function updateBoard() {
+            vm.board = Array.from({ length: size * size }, () => ({ type: "empty" }));
+            const playerIndex = vm.player.y * size + vm.player.x;
+            vm.board[playerIndex] = { type: "player", shielded: vm.player.shield > 0 };
+
+            vm.enemies.forEach((enemy) => {
+              const index = enemy.y * size + enemy.x;
+              vm.board[index] = { type: "enemy" };
+            });
+
+            vm.loot.forEach((loot) => {
+              const index = loot.y * size + loot.x;
+              vm.board[index] = { type: "loot" };
+            });
+
+            const highlightCells = cellsInRange(vm.player.x, vm.player.y, vm.player.range);
+            highlightCells.forEach((cell) => {
+              const index = cell.y * size + cell.x;
+              if (vm.board[index].type === "empty") {
+                vm.board[index] = { type: "empty", highlight: true };
+              } else {
+                vm.board[index].highlight = true;
+              }
+            });
+          }
+
+          function movePlayer(dx, dy) {
+            const targetX = clamp(vm.player.x + dx);
+            const targetY = clamp(vm.player.y + dy);
+            vm.player.x = targetX;
+            vm.player.y = targetY;
+            collectLoot();
+            updateBoard();
+          }
+
+          function clamp(value) {
+            return Math.max(0, Math.min(size - 1, value));
+          }
+
+          function collectLoot() {
+            vm.loot = vm.loot.filter((loot) => {
+              if (loot.x === vm.player.x && loot.y === vm.player.y) {
+                vm.player.xp += 20;
+                vm.player.combo += 1;
+                vm.log.unshift("Relic shard secured. XP gained.");
+                return false;
+              }
+              return true;
+            });
+          }
+
+          function shoot() {
+            if (vm.player.ammo <= 0) {
+              vm.log.unshift("Out of ammo! Collect loot or upgrade.");
+              return;
+            }
+            vm.player.ammo -= 1;
+            const targets = vm.enemies.filter(
+              (enemy) => distance(enemy, vm.player) <= vm.player.range
+            );
+            if (!targets.length) {
+              vm.log.unshift("Shot fired into the void.");
+              return;
+            }
+            const target = targets[Math.floor(Math.random() * targets.length)];
+            let damage = vm.player.attack;
+            if (Math.random() * 100 < vm.player.crit) {
+              damage = Math.floor(damage * 1.8);
+              vm.log.unshift("Critical hit!");
+            }
+            target.health -= damage;
+            vm.log.unshift(`Hit enemy for ${damage} damage.`);
+            if (target.health <= 0) {
+              vm.enemies = vm.enemies.filter((enemy) => enemy !== target);
+              vm.player.xp += 25;
+              vm.player.combo += 1;
+              vm.log.unshift("Enemy down! XP awarded.");
+            }
+            updateBoard();
+            checkWaveClear();
+          }
+
+          function dash() {
+            const dx = Math.sign(Math.random() - 0.5);
+            const dy = Math.sign(Math.random() - 0.5);
+            movePlayer(dx * 2, dy * 2);
+            vm.log.unshift("Dash burst activated.");
+          }
+
+          function dropBomb() {
+            const affected = vm.enemies.filter((enemy) => distance(enemy, vm.player) <= 2);
+            if (!affected.length) {
+              vm.log.unshift("Bomb fizzled. No enemies nearby.");
+              return;
+            }
+            affected.forEach((enemy) => {
+              enemy.health -= 18;
+            });
+            vm.enemies = vm.enemies.filter((enemy) => enemy.health > 0);
+            vm.player.xp += affected.length * 10;
+            vm.log.unshift("Pulse bomb detonated.");
+            updateBoard();
+            checkWaveClear();
+          }
+
+          function enemyTurn() {
+            if (vm.paused) {
+              return;
+            }
+            vm.enemies.forEach((enemy) => {
+              const dx = Math.sign(vm.player.x - enemy.x);
+              const dy = Math.sign(vm.player.y - enemy.y);
+              if (distance(enemy, vm.player) <= 1) {
+                let damage = Math.max(0, enemy.attack - vm.player.armor);
+                if (Math.random() * 100 < vm.player.dodge) {
+                  vm.log.unshift("Dodged incoming attack!");
+                  return;
+                }
+                if (vm.player.shield > 0) {
+                  vm.player.shield = Math.max(0, vm.player.shield - 5);
+                  damage = Math.floor(damage / 2);
+                }
+                vm.player.health -= damage;
+                vm.log.unshift(`Enemy strike: -${damage} HP.`);
+              } else {
+                enemy.x = clamp(enemy.x + dx);
+                enemy.y = clamp(enemy.y + dy);
+              }
+            });
+            if (vm.player.health <= 0) {
+              vm.log.unshift("You have been overwhelmed. Restart to try again.");
+              vm.paused = true;
+            }
+            updateBoard();
+          }
+
+          function checkWaveClear() {
+            if (vm.enemies.length === 0) {
+              vm.level += 1;
+              vm.wave += 1;
+              vm.player.xp = 0;
+              vm.player.xpToLevel = Math.floor(vm.player.xpToLevel * 1.25);
+              vm.player.health = Math.min(
+                vm.player.maxHealth,
+                vm.player.health + 20 + vm.level * 2
+              );
+              vm.player.ammo += 4;
+              vm.log.unshift("Arena cleared! Level up achieved.");
+              vm.spawnWave();
+            }
+          }
+
+          function distance(a, b) {
+            return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+          }
+
+          function cellsInRange(x, y, range) {
+            const cells = [];
+            for (let row = 0; row < size; row += 1) {
+              for (let col = 0; col < size; col += 1) {
+                if (Math.max(Math.abs(col - x), Math.abs(row - y)) <= range) {
+                  cells.push({ x: col, y: row });
+                }
+              }
+            }
+            return cells;
+          }
+
+          function shuffle(array) {
+            return array
+              .map((value) => ({ value, sort: Math.random() }))
+              .sort((a, b) => a.sort - b.sort)
+              .map(({ value }) => value);
+          }
+
+          function handleKey(event) {
+            if (vm.paused) {
+              return;
+            }
+            if (keyState.has(event.code)) {
+              return;
+            }
+            keyState.add(event.code);
+            switch (event.code) {
+              case "ArrowUp":
+              case "KeyW":
+                movePlayer(0, -1);
+                break;
+              case "ArrowDown":
+              case "KeyS":
+                movePlayer(0, 1);
+                break;
+              case "ArrowLeft":
+              case "KeyA":
+                movePlayer(-1, 0);
+                break;
+              case "ArrowRight":
+              case "KeyD":
+                movePlayer(1, 0);
+                break;
+              case "Space":
+                shoot();
+                break;
+              case "ShiftLeft":
+              case "ShiftRight":
+                dash();
+                break;
+              case "KeyB":
+                dropBomb();
+                break;
+              default:
+                break;
+            }
+            $scope.$applyAsync();
+          }
+
+          function releaseKey(event) {
+            keyState.delete(event.code);
+          }
+
+          $document.on("keydown", handleKey);
+          $document.on("keyup", releaseKey);
+
+          const enemyInterval = $interval(enemyTurn, 1400);
+
+          $scope.$on("$destroy", () => {
+            $interval.cancel(enemyInterval);
+            $document.off("keydown", handleKey);
+            $document.off("keyup", releaseKey);
+          });
+
+          refreshUpgrades();
+          vm.spawnWave();
+        });
+    </script>
   </body>
 </html>
