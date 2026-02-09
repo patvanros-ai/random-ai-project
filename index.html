@@ -61,6 +61,8 @@
         font-size: 1.2rem;
         position: relative;
         overflow: hidden;
+        transition: transform 0.2s ease, background 0.2s ease, border 0.2s ease,
+          box-shadow 0.2s ease;
       }
 
       .cell::after {
@@ -89,6 +91,11 @@
       .loot {
         background: linear-gradient(135deg, rgba(250, 204, 21, 0.25), rgba(234, 179, 8, 0.35));
         border: 1px solid rgba(250, 204, 21, 0.6);
+      }
+
+      .wall {
+        background: linear-gradient(135deg, rgba(148, 163, 184, 0.25), rgba(71, 85, 105, 0.4));
+        border: 1px solid rgba(148, 163, 184, 0.45);
       }
 
       .shielded {
@@ -178,6 +185,7 @@
                 <span><span class="dot bg-info"></span>Hero</span>
                 <span><span class="dot bg-danger"></span>Enemy</span>
                 <span><span class="dot bg-warning"></span>Relic</span>
+                <span><span class="dot bg-secondary"></span>Wall</span>
               </div>
             </div>
             <div class="board">
@@ -188,6 +196,7 @@
                   player: cell.type === 'player',
                   enemy: cell.type === 'enemy',
                   loot: cell.type === 'loot',
+                  wall: cell.type === 'wall',
                   highlight: cell.highlight,
                   shielded: cell.shielded
                 }"
@@ -195,12 +204,12 @@
                 <span ng-if="cell.type === 'player'">⚡</span>
                 <span ng-if="cell.type === 'enemy'">👾</span>
                 <span ng-if="cell.type === 'loot'">💠</span>
+                <span ng-if="cell.type === 'wall'">🧱</span>
               </div>
             </div>
             <div class="mt-3 d-flex flex-wrap gap-3 text-secondary small">
               <span>Move: WASD / Arrow Keys</span>
               <span>Shoot: Space</span>
-              <span>Dash: Shift</span>
               <span>Bomb: B</span>
             </div>
           </div>
@@ -363,6 +372,7 @@
           vm.log = ["Welcome to Starfall Arena."];
           vm.enemies = [];
           vm.loot = [];
+          vm.walls = [];
           vm.upgrades = [];
           vm.board = [];
 
@@ -385,8 +395,8 @@
               },
             },
             {
-              name: "Vector Thrusters",
-              description: "Dash range increases and dodge improves.",
+              name: "Evasion Boost",
+              description: "Improve dodge routines and targeting range.",
               apply: () => {
                 vm.player.dodge += 6;
                 vm.player.range += 1;
@@ -427,6 +437,8 @@
 
           vm.spawnWave = () => {
             vm.enemies = [];
+            vm.walls = [];
+            generateWalls();
             const count = 3 + vm.wave;
             for (let i = 0; i < count; i += 1) {
               const position = randomOpenCell();
@@ -488,7 +500,7 @@
             vm.upgrades = shuffle([...upgradePool]).slice(0, 3);
           }
 
-          function randomOpenCell() {
+          function randomOpenCell({ avoidWalls = true } = {}) {
             let x = 0;
             let y = 0;
             let occupied = true;
@@ -497,15 +509,34 @@
               y = Math.floor(Math.random() * size);
               occupied =
                 (x === vm.player.x && y === vm.player.y) ||
-                vm.enemies.some((enemy) => enemy.x === x && enemy.y === y);
+                vm.enemies.some((enemy) => enemy.x === x && enemy.y === y) ||
+                (avoidWalls && vm.walls.some((wall) => wall.x === x && wall.y === y));
             }
             return { x, y };
+          }
+
+          function generateWalls() {
+            const desiredWalls = Math.min(14, 3 + vm.wave + Math.floor(vm.level / 2));
+            let attempts = 0;
+            while (vm.walls.length < desiredWalls && attempts < desiredWalls * 12) {
+              const spot = randomOpenCell({ avoidWalls: false });
+              const alreadyWall = vm.walls.some((wall) => wall.x === spot.x && wall.y === spot.y);
+              if (!alreadyWall) {
+                vm.walls.push(spot);
+              }
+              attempts += 1;
+            }
           }
 
           function updateBoard() {
             vm.board = Array.from({ length: size * size }, () => ({ type: "empty" }));
             const playerIndex = vm.player.y * size + vm.player.x;
             vm.board[playerIndex] = { type: "player", shielded: vm.player.shield > 0 };
+
+            vm.walls.forEach((wall) => {
+              const index = wall.y * size + wall.x;
+              vm.board[index] = { type: "wall" };
+            });
 
             vm.enemies.forEach((enemy) => {
               const index = enemy.y * size + enemy.x;
@@ -520,6 +551,9 @@
             const highlightCells = cellsInRange(vm.player.x, vm.player.y, vm.player.range);
             highlightCells.forEach((cell) => {
               const index = cell.y * size + cell.x;
+              if (vm.board[index].type === "wall") {
+                return;
+              }
               if (vm.board[index].type === "empty") {
                 vm.board[index] = { type: "empty", highlight: true };
               } else {
@@ -531,6 +565,10 @@
           function movePlayer(dx, dy) {
             const targetX = clamp(vm.player.x + dx);
             const targetY = clamp(vm.player.y + dy);
+            if (vm.walls.some((wall) => wall.x === targetX && wall.y === targetY)) {
+              vm.log.unshift("Wall blocked the route.");
+              return;
+            }
             vm.player.x = targetX;
             vm.player.y = targetY;
             collectLoot();
@@ -584,13 +622,6 @@
             checkWaveClear();
           }
 
-          function dash() {
-            const dx = Math.sign(Math.random() - 0.5);
-            const dy = Math.sign(Math.random() - 0.5);
-            movePlayer(dx * 2, dy * 2);
-            vm.log.unshift("Dash burst activated.");
-          }
-
           function dropBomb() {
             const affected = vm.enemies.filter((enemy) => distance(enemy, vm.player) <= 2);
             if (!affected.length) {
@@ -627,8 +658,13 @@
                 vm.player.health -= damage;
                 vm.log.unshift(`Enemy strike: -${damage} HP.`);
               } else {
-                enemy.x = clamp(enemy.x + dx);
-                enemy.y = clamp(enemy.y + dy);
+                const nextX = clamp(enemy.x + dx);
+                const nextY = clamp(enemy.y + dy);
+                const blocked = vm.walls.some((wall) => wall.x === nextX && wall.y === nextY);
+                if (!blocked) {
+                  enemy.x = nextX;
+                  enemy.y = nextY;
+                }
               }
             });
             if (vm.player.health <= 0) {
@@ -705,10 +741,6 @@
               case "Space":
                 shoot();
                 break;
-              case "ShiftLeft":
-              case "ShiftRight":
-                dash();
-                break;
               case "KeyB":
                 dropBomb();
                 break;
@@ -726,9 +758,24 @@
           $document.on("keyup", releaseKey);
 
           const enemyInterval = $interval(enemyTurn, 1400);
+          const autoAttackInterval = $interval(() => {
+            if (vm.paused) {
+              return;
+            }
+            if (vm.player.ammo <= 0) {
+              return;
+            }
+            const targets = vm.enemies.filter(
+              (enemy) => distance(enemy, vm.player) <= vm.player.range
+            );
+            if (targets.length) {
+              shoot();
+            }
+          }, 900);
 
           $scope.$on("$destroy", () => {
             $interval.cancel(enemyInterval);
+            $interval.cancel(autoAttackInterval);
             $document.off("keydown", handleKey);
             $document.off("keyup", releaseKey);
           });
