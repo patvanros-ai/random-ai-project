@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Neon Rogue: Starfall Arena</title>
+    <title>Neon Bomber: Gridfall Arena</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -98,6 +98,17 @@
         border: 1px solid rgba(148, 163, 184, 0.45);
       }
 
+      .bomb {
+        background: radial-gradient(circle, rgba(248, 250, 252, 0.35), rgba(148, 163, 184, 0.2));
+        border: 1px solid rgba(226, 232, 240, 0.7);
+      }
+
+      .explosion {
+        background: radial-gradient(circle, rgba(248, 113, 113, 0.5), rgba(248, 113, 113, 0.2));
+        border: 1px solid rgba(248, 113, 113, 0.8);
+        box-shadow: 0 0 12px rgba(248, 113, 113, 0.6);
+      }
+
       .shielded {
         box-shadow: 0 0 15px rgba(56, 189, 248, 0.8) inset;
       }
@@ -158,9 +169,9 @@
     <div class="container">
       <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
-          <h1 class="title mb-1">Neon Rogue: Starfall Arena</h1>
+          <h1 class="title mb-1">Neon Bomber: Gridfall Arena</h1>
           <p class="mb-0 text-secondary">
-            Survive waves, collect relics, and level up every time you clear the arena.
+            Plant bombs, clear crates, and outlast the rogue drones in the neon grid.
           </p>
         </div>
         <div class="d-flex gap-2">
@@ -178,14 +189,15 @@
           <div class="panel p-3 glow">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
               <div>
-                <div class="text-uppercase text-info small">Level {{ vm.level }}</div>
-                <div class="fs-5 fw-semibold">Wave {{ vm.wave }} · Arena {{ vm.biome }}</div>
+                <div class="text-uppercase text-info small">Stage {{ vm.stage }}</div>
+                <div class="fs-5 fw-semibold">Arena {{ vm.biome }}</div>
               </div>
               <div class="legend text-secondary small">
                 <span><span class="dot bg-info"></span>Hero</span>
                 <span><span class="dot bg-danger"></span>Enemy</span>
-                <span><span class="dot bg-warning"></span>Relic</span>
+                <span><span class="dot bg-warning"></span>Crate</span>
                 <span><span class="dot bg-secondary"></span>Wall</span>
+                <span><span class="dot bg-light"></span>Bomb</span>
               </div>
             </div>
             <div class="board">
@@ -195,22 +207,26 @@
                 ng-class="{
                   player: cell.type === 'player',
                   enemy: cell.type === 'enemy',
-                  loot: cell.type === 'loot',
+                  loot: cell.type === 'crate',
                   wall: cell.type === 'wall',
+                  bomb: cell.type === 'bomb',
+                  explosion: cell.type === 'explosion',
                   highlight: cell.highlight,
                   shielded: cell.shielded
                 }"
               >
-                <span ng-if="cell.type === 'player'">⚡</span>
-                <span ng-if="cell.type === 'enemy'">👾</span>
-                <span ng-if="cell.type === 'loot'">💠</span>
+                <span ng-if="cell.type === 'player'">🙂</span>
+                <span ng-if="cell.type === 'enemy'">🤖</span>
+                <span ng-if="cell.type === 'crate'">📦</span>
                 <span ng-if="cell.type === 'wall'">🧱</span>
+                <span ng-if="cell.type === 'bomb'">💣</span>
+                <span ng-if="cell.type === 'explosion'">💥</span>
               </div>
             </div>
             <div class="mt-3 d-flex flex-wrap gap-3 text-secondary small">
               <span>Move: WASD / Arrow Keys</span>
-              <span>Shoot: Space</span>
-              <span>Bomb: B</span>
+              <span>Plant Bomb: B</span>
+              <span>Pause: Button</span>
             </div>
           </div>
         </div>
@@ -219,14 +235,14 @@
           <div class="panel p-4 mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <div>
-                <div class="text-uppercase text-info small">Pilot</div>
+                <div class="text-uppercase text-info small">Bomber</div>
                 <div class="fs-5 fw-semibold">{{ vm.player.name }}</div>
               </div>
-              <span class="stat-pill">Combo x{{ vm.player.combo }}</span>
+              <span class="stat-pill">Lives {{ vm.player.lives }}</span>
             </div>
             <div class="mb-3">
               <div class="d-flex justify-content-between small">
-                <span>Hull Integrity</span>
+                <span>Shield</span>
                 <span>{{ vm.player.health }} / {{ vm.player.maxHealth }}</span>
               </div>
               <div class="mini-bar">
@@ -235,49 +251,49 @@
             </div>
             <div class="mb-3">
               <div class="d-flex justify-content-between small">
-                <span>XP</span>
-                <span>{{ vm.player.xp }} / {{ vm.player.xpToLevel }}</span>
+                <span>Bomb Power</span>
+                <span>{{ vm.player.bombPower }}</span>
               </div>
               <div class="mini-bar">
-                <span style="width: {{ vm.player.xp / vm.player.xpToLevel * 100 }}%"></span>
+                <span style="width: {{ vm.player.bombPower * 20 }}%"></span>
               </div>
             </div>
             <div class="row g-2 text-center mb-3">
               <div class="col-4">
                 <div class="floating-card">
-                  <div class="text-uppercase text-secondary small">Attack</div>
-                  <div class="fw-semibold">{{ vm.player.attack }}</div>
+                  <div class="text-uppercase text-secondary small">Bombs</div>
+                  <div class="fw-semibold">{{ vm.player.bombsAvailable }}</div>
                 </div>
               </div>
               <div class="col-4">
                 <div class="floating-card">
-                  <div class="text-uppercase text-secondary small">Range</div>
-                  <div class="fw-semibold">{{ vm.player.range }}</div>
+                  <div class="text-uppercase text-secondary small">Speed</div>
+                  <div class="fw-semibold">{{ vm.player.speed }}</div>
                 </div>
               </div>
               <div class="col-4">
                 <div class="floating-card">
-                  <div class="text-uppercase text-secondary small">Armor</div>
-                  <div class="fw-semibold">{{ vm.player.armor }}</div>
+                  <div class="text-uppercase text-secondary small">Stage</div>
+                  <div class="fw-semibold">{{ vm.stage }}</div>
                 </div>
               </div>
             </div>
             <div class="d-flex flex-wrap gap-2">
-              <span class="stat-pill">Ammo: {{ vm.player.ammo }}</span>
-              <span class="stat-pill">Shield: {{ vm.player.shield }}%</span>
-              <span class="stat-pill">Crit: {{ vm.player.crit }}%</span>
-              <span class="stat-pill">Dodge: {{ vm.player.dodge }}%</span>
+              <span class="stat-pill">Active Bombs: {{ vm.bombs.length }}</span>
+              <span class="stat-pill">Crates: {{ vm.crates.length }}</span>
+              <span class="stat-pill">Enemies: {{ vm.enemies.length }}</span>
+              <span class="stat-pill">Arena: {{ vm.biome }}</span>
             </div>
           </div>
 
           <div class="panel p-4 mb-4">
-            <h5 class="mb-3">Relics & Mods</h5>
+            <h5 class="mb-3">Power Modules</h5>
             <div class="d-flex flex-wrap gap-2">
-              <span class="badge text-bg-info" ng-repeat="relic in vm.player.relics track by $index">
+              <span class="badge text-bg-info" ng-repeat="relic in vm.player.modules track by $index">
                 {{ relic }}
               </span>
-              <span class="text-secondary" ng-if="vm.player.relics.length === 0">
-                No relics collected yet.
+              <span class="text-secondary" ng-if="vm.player.modules.length === 0">
+                No modules collected yet.
               </span>
             </div>
             <div class="mt-3">
@@ -319,13 +335,12 @@
             <h5 class="mb-3">Mission Intel</h5>
             <ul class="list-unstyled mb-2">
               <li>Enemies Remaining: <span class="accent">{{ vm.enemies.length }}</span></li>
-              <li>Relics on Field: <span class="accent">{{ vm.loot.length }}</span></li>
-              <li>Next Reward: <span class="accent">{{ vm.nextReward }}</span></li>
+              <li>Crates Remaining: <span class="accent">{{ vm.crates.length }}</span></li>
+              <li>Next Module: <span class="accent">{{ vm.nextReward }}</span></li>
               <li>Threat Level: <span class="accent">{{ vm.threatLevel }}</span></li>
             </ul>
             <div class="text-secondary small">
-              Clear the arena to level up. Every level unlocks a random surprise: drones, warp fields,
-              pulse bombs, or secret healing fountains.
+              Clear the arena to advance. Power modules boost bomb capacity, shielding, and speed.
             </div>
           </div>
         </div>
@@ -341,154 +356,135 @@
           const size = 9;
           const keyState = new Set();
 
-          vm.biomes = ["Nebula", "Citadel", "Wasteland", "Synthspire", "Void Rift"];
+          vm.biomes = ["Neon Dock", "Arcade Grid", "Ion Foundry", "Circuit Vault", "Void Rift"];
           vm.biome = vm.biomes[0];
           vm.nextReward = "Relic Cache";
           vm.threatLevel = "Alpha";
           vm.paused = false;
 
           vm.player = {
-            name: "Nova",
-            x: 4,
-            y: 4,
+            name: "Blitz",
+            x: 1,
+            y: 1,
             health: 100,
             maxHealth: 100,
-            attack: 16,
-            range: 3,
-            armor: 2,
-            ammo: 8,
-            shield: 20,
-            crit: 12,
-            dodge: 8,
-            xp: 0,
-            xpToLevel: 100,
-            combo: 1,
-            relics: [],
-            perks: ["Auto-Repair", "Scout Drone", "Pulse Surge"],
+            lives: 3,
+            bombsAvailable: 1,
+            bombPower: 2,
+            speed: "Normal",
+            modules: [],
+            perks: ["Blast Suit", "Quick Fuse"],
           };
 
-          vm.level = 1;
-          vm.wave = 1;
-          vm.log = ["Welcome to Starfall Arena."];
+          vm.stage = 1;
+          vm.log = ["Welcome to Gridfall Arena."];
           vm.enemies = [];
-          vm.loot = [];
           vm.walls = [];
+          vm.crates = [];
+          vm.bombs = [];
+          vm.explosions = [];
           vm.upgrades = [];
           vm.board = [];
 
           const upgradePool = [
             {
-              name: "Photon Burst",
-              description: "Shots chain to a nearby enemy.",
+              name: "Fuse Accelerator",
+              description: "Increase bomb capacity by 1.",
               apply: () => {
-                vm.player.attack += 3;
-                vm.player.perks.push("Chain Lightning");
+                vm.player.bombsAvailable += 1;
+                vm.player.modules.push("Fuse Accelerator");
               },
             },
             {
-              name: "Nano Shield",
-              description: "Increase shield capacity by 10%.",
+              name: "Blast Core",
+              description: "Increase bomb power by 1.",
               apply: () => {
-                vm.player.shield += 10;
-                vm.player.maxHealth += 10;
-                vm.player.health += 10;
+                vm.player.bombPower += 1;
+                vm.player.modules.push("Blast Core");
               },
             },
             {
-              name: "Evasion Boost",
-              description: "Improve dodge routines and targeting range.",
+              name: "Shield Patch",
+              description: "Repair 20 shield health.",
               apply: () => {
-                vm.player.dodge += 6;
-                vm.player.range += 1;
+                vm.player.health = Math.min(vm.player.maxHealth, vm.player.health + 20);
+                vm.player.modules.push("Shield Patch");
               },
             },
             {
-              name: "Ammo Synth",
-              description: "Regenerate ammo every wave.",
+              name: "Speed Boots",
+              description: "Boost movement speed tier.",
               apply: () => {
-                vm.player.ammo += 4;
-                vm.player.perks.push("Ammo Regen");
+                vm.player.speed = "Fast";
+                vm.player.modules.push("Speed Boots");
               },
             },
             {
-              name: "Overclock",
-              description: "Critical chance +8%.",
+              name: "Reinforced Vest",
+              description: "Increase max health by 15.",
               apply: () => {
-                vm.player.crit += 8;
+                vm.player.maxHealth += 15;
+                vm.player.health += 15;
+                vm.player.modules.push("Reinforced Vest");
               },
             },
             {
-              name: "Battle Medic",
-              description: "Heal 20 and raise armor.",
+              name: "Extra Life",
+              description: "Gain an extra life.",
               apply: () => {
-                vm.player.armor += 2;
-                vm.player.health = Math.min(vm.player.health + 20, vm.player.maxHealth);
+                vm.player.lives += 1;
+                vm.player.modules.push("Extra Life");
               },
             },
           ];
 
-          const relicPool = [
-            "Temporal Loop",
-            "Gravity Lens",
-            "Void Orchid",
-            "Astral Compass",
-            "Echo Prism",
-          ];
-
-          vm.spawnWave = () => {
+          vm.spawnStage = () => {
             vm.enemies = [];
             vm.walls = [];
+            vm.crates = [];
             generateWalls();
-            const count = 3 + vm.wave;
+            generateCrates();
+            const count = 2 + vm.stage;
             for (let i = 0; i < count; i += 1) {
               const position = randomOpenCell();
               vm.enemies.push({
                 id: i,
                 x: position.x,
                 y: position.y,
-                health: 20 + vm.wave * 6,
-                attack: 6 + vm.wave * 2,
+                health: 1,
               });
             }
-            vm.loot = [];
-            vm.loot.push(randomOpenCell());
-            vm.biome = vm.biomes[(vm.wave - 1) % vm.biomes.length];
+            vm.bombs = [];
+            vm.explosions = [];
+            vm.biome = vm.biomes[(vm.stage - 1) % vm.biomes.length];
             vm.nextReward = upgradePool[Math.floor(Math.random() * upgradePool.length)].name;
-            vm.threatLevel = ["Alpha", "Beta", "Gamma", "Omega"][Math.min(vm.wave - 1, 3)];
-            vm.log.unshift(`Wave ${vm.wave} deployed. Enemies inbound.`);
+            vm.threatLevel = ["Alpha", "Beta", "Gamma", "Omega"][Math.min(vm.stage - 1, 3)];
+            vm.log.unshift(`Stage ${vm.stage} deployed. Clear the grid.`);
             updateBoard();
           };
 
           vm.pickUpgrade = (upgrade) => {
             upgrade.apply();
-            vm.player.relics.push(relicPool[Math.floor(Math.random() * relicPool.length)]);
-            vm.log.unshift(`Installed ${upgrade.name}. Relic acquired!`);
+            vm.log.unshift(`Installed ${upgrade.name}.`);
             refreshUpgrades();
           };
 
           vm.restart = () => {
-            vm.level = 1;
-            vm.wave = 1;
-            vm.player.x = 4;
-            vm.player.y = 4;
+            vm.stage = 1;
+            vm.player.x = 1;
+            vm.player.y = 1;
             vm.player.health = 100;
             vm.player.maxHealth = 100;
-            vm.player.attack = 16;
-            vm.player.range = 3;
-            vm.player.armor = 2;
-            vm.player.ammo = 8;
-            vm.player.shield = 20;
-            vm.player.crit = 12;
-            vm.player.dodge = 8;
-            vm.player.xp = 0;
-            vm.player.xpToLevel = 100;
-            vm.player.combo = 1;
-            vm.player.relics = [];
-            vm.player.perks = ["Auto-Repair", "Scout Drone", "Pulse Surge"];
-            vm.log = ["Run restarted. Good hunting."];
+            vm.player.lives = 3;
+            vm.player.bombsAvailable = 1;
+            vm.player.bombPower = 2;
+            vm.player.speed = "Normal";
+            vm.player.modules = [];
+            vm.player.perks = ["Blast Suit", "Quick Fuse"];
+            vm.log = ["Run restarted. Plant those bombs!"];
             vm.biome = vm.biomes[0];
             refreshUpgrades();
-            vm.spawnWave();
+            vm.spawnStage();
           };
 
           vm.togglePause = () => {
@@ -500,7 +496,7 @@
             vm.upgrades = shuffle([...upgradePool]).slice(0, 3);
           }
 
-          function randomOpenCell({ avoidWalls = true } = {}) {
+          function randomOpenCell({ avoidWalls = true, avoidCrates = true } = {}) {
             let x = 0;
             let y = 0;
             let occupied = true;
@@ -510,19 +506,41 @@
               occupied =
                 (x === vm.player.x && y === vm.player.y) ||
                 vm.enemies.some((enemy) => enemy.x === x && enemy.y === y) ||
-                (avoidWalls && vm.walls.some((wall) => wall.x === x && wall.y === y));
+                (avoidWalls && vm.walls.some((wall) => wall.x === x && wall.y === y)) ||
+                (avoidCrates && vm.crates.some((crate) => crate.x === x && crate.y === y));
             }
             return { x, y };
           }
 
           function generateWalls() {
-            const desiredWalls = Math.min(14, 3 + vm.wave + Math.floor(vm.level / 2));
+            vm.walls = [];
+            for (let row = 0; row < size; row += 1) {
+              for (let col = 0; col < size; col += 1) {
+                if (row === 0 || col === 0 || row === size - 1 || col === size - 1) {
+                  vm.walls.push({ x: col, y: row });
+                } else if (row % 2 === 0 && col % 2 === 0) {
+                  vm.walls.push({ x: col, y: row });
+                }
+              }
+            }
+            const safeZone = [
+              { x: 1, y: 1 },
+              { x: 1, y: 2 },
+              { x: 2, y: 1 },
+            ];
+            vm.walls = vm.walls.filter(
+              (wall) => !safeZone.some((safe) => safe.x === wall.x && safe.y === wall.y)
+            );
+          }
+
+          function generateCrates() {
+            const desiredCrates = Math.min(24, 10 + vm.stage * 2);
             let attempts = 0;
-            while (vm.walls.length < desiredWalls && attempts < desiredWalls * 12) {
-              const spot = randomOpenCell({ avoidWalls: false });
-              const alreadyWall = vm.walls.some((wall) => wall.x === spot.x && wall.y === spot.y);
-              if (!alreadyWall) {
-                vm.walls.push(spot);
+            while (vm.crates.length < desiredCrates && attempts < desiredCrates * 10) {
+              const spot = randomOpenCell({ avoidWalls: true, avoidCrates: false });
+              const alreadyCrate = vm.crates.some((crate) => crate.x === spot.x && crate.y === spot.y);
+              if (!alreadyCrate) {
+                vm.crates.push(spot);
               }
               attempts += 1;
             }
@@ -531,47 +549,47 @@
           function updateBoard() {
             vm.board = Array.from({ length: size * size }, () => ({ type: "empty" }));
             const playerIndex = vm.player.y * size + vm.player.x;
-            vm.board[playerIndex] = { type: "player", shielded: vm.player.shield > 0 };
+            vm.board[playerIndex] = { type: "player", shielded: vm.player.health > 50 };
 
             vm.walls.forEach((wall) => {
               const index = wall.y * size + wall.x;
               vm.board[index] = { type: "wall" };
             });
 
+            vm.crates.forEach((crate) => {
+              const index = crate.y * size + crate.x;
+              vm.board[index] = { type: "crate" };
+            });
+
+            vm.bombs.forEach((bomb) => {
+              const index = bomb.y * size + bomb.x;
+              vm.board[index] = { type: "bomb" };
+            });
+
+            vm.explosions.forEach((blast) => {
+              const index = blast.y * size + blast.x;
+              vm.board[index] = { type: "explosion" };
+            });
+
             vm.enemies.forEach((enemy) => {
               const index = enemy.y * size + enemy.x;
               vm.board[index] = { type: "enemy" };
-            });
-
-            vm.loot.forEach((loot) => {
-              const index = loot.y * size + loot.x;
-              vm.board[index] = { type: "loot" };
-            });
-
-            const highlightCells = cellsInRange(vm.player.x, vm.player.y, vm.player.range);
-            highlightCells.forEach((cell) => {
-              const index = cell.y * size + cell.x;
-              if (vm.board[index].type === "wall") {
-                return;
-              }
-              if (vm.board[index].type === "empty") {
-                vm.board[index] = { type: "empty", highlight: true };
-              } else {
-                vm.board[index].highlight = true;
-              }
             });
           }
 
           function movePlayer(dx, dy) {
             const targetX = clamp(vm.player.x + dx);
             const targetY = clamp(vm.player.y + dy);
-            if (vm.walls.some((wall) => wall.x === targetX && wall.y === targetY)) {
-              vm.log.unshift("Wall blocked the route.");
+            if (
+              vm.walls.some((wall) => wall.x === targetX && wall.y === targetY) ||
+              vm.crates.some((crate) => crate.x === targetX && crate.y === targetY) ||
+              vm.bombs.some((bomb) => bomb.x === targetX && bomb.y === targetY)
+            ) {
+              vm.log.unshift("Path blocked.");
               return;
             }
             vm.player.x = targetX;
             vm.player.y = targetY;
-            collectLoot();
             updateBoard();
           }
 
@@ -579,63 +597,26 @@
             return Math.max(0, Math.min(size - 1, value));
           }
 
-          function collectLoot() {
-            vm.loot = vm.loot.filter((loot) => {
-              if (loot.x === vm.player.x && loot.y === vm.player.y) {
-                vm.player.xp += 20;
-                vm.player.combo += 1;
-                vm.log.unshift("Relic shard secured. XP gained.");
-                return false;
-              }
-              return true;
-            });
-          }
-
-          function shoot() {
-            if (vm.player.ammo <= 0) {
-              vm.log.unshift("Out of ammo! Collect loot or upgrade.");
-              return;
-            }
-            vm.player.ammo -= 1;
-            const targets = vm.enemies.filter(
-              (enemy) => distance(enemy, vm.player) <= vm.player.range
-            );
-            if (!targets.length) {
-              vm.log.unshift("Shot fired into the void.");
-              return;
-            }
-            const target = targets[Math.floor(Math.random() * targets.length)];
-            let damage = vm.player.attack;
-            if (Math.random() * 100 < vm.player.crit) {
-              damage = Math.floor(damage * 1.8);
-              vm.log.unshift("Critical hit!");
-            }
-            target.health -= damage;
-            vm.log.unshift(`Hit enemy for ${damage} damage.`);
-            if (target.health <= 0) {
-              vm.enemies = vm.enemies.filter((enemy) => enemy !== target);
-              vm.player.xp += 25;
-              vm.player.combo += 1;
-              vm.log.unshift("Enemy down! XP awarded.");
-            }
-            updateBoard();
-            checkWaveClear();
-          }
-
           function dropBomb() {
-            const affected = vm.enemies.filter((enemy) => distance(enemy, vm.player) <= 2);
-            if (!affected.length) {
-              vm.log.unshift("Bomb fizzled. No enemies nearby.");
+            if (vm.bombs.length >= vm.player.bombsAvailable) {
+              vm.log.unshift("Bomb limit reached.");
               return;
             }
-            affected.forEach((enemy) => {
-              enemy.health -= 18;
+            const existingBomb = vm.bombs.some(
+              (bomb) => bomb.x === vm.player.x && bomb.y === vm.player.y
+            );
+            if (existingBomb) {
+              vm.log.unshift("Bomb already planted.");
+              return;
+            }
+            vm.bombs.push({
+              x: vm.player.x,
+              y: vm.player.y,
+              timer: 6,
+              power: vm.player.bombPower,
             });
-            vm.enemies = vm.enemies.filter((enemy) => enemy.health > 0);
-            vm.player.xp += affected.length * 10;
-            vm.log.unshift("Pulse bomb detonated.");
+            vm.log.unshift("Bomb planted.");
             updateBoard();
-            checkWaveClear();
           }
 
           function enemyTurn() {
@@ -643,67 +624,47 @@
               return;
             }
             vm.enemies.forEach((enemy) => {
-              const dx = Math.sign(vm.player.x - enemy.x);
-              const dy = Math.sign(vm.player.y - enemy.y);
-              if (distance(enemy, vm.player) <= 1) {
-                let damage = Math.max(0, enemy.attack - vm.player.armor);
-                if (Math.random() * 100 < vm.player.dodge) {
-                  vm.log.unshift("Dodged incoming attack!");
-                  return;
-                }
-                if (vm.player.shield > 0) {
-                  vm.player.shield = Math.max(0, vm.player.shield - 5);
-                  damage = Math.floor(damage / 2);
-                }
-                vm.player.health -= damage;
-                vm.log.unshift(`Enemy strike: -${damage} HP.`);
-              } else {
-                const nextX = clamp(enemy.x + dx);
-                const nextY = clamp(enemy.y + dy);
-                const blocked = vm.walls.some((wall) => wall.x === nextX && wall.y === nextY);
+              const directions = shuffle([
+                { x: 1, y: 0 },
+                { x: -1, y: 0 },
+                { x: 0, y: 1 },
+                { x: 0, y: -1 },
+              ]);
+              for (const direction of directions) {
+                const nextX = clamp(enemy.x + direction.x);
+                const nextY = clamp(enemy.y + direction.y);
+                const blocked =
+                  vm.walls.some((wall) => wall.x === nextX && wall.y === nextY) ||
+                  vm.crates.some((crate) => crate.x === nextX && crate.y === nextY) ||
+                  vm.bombs.some((bomb) => bomb.x === nextX && bomb.y === nextY);
                 if (!blocked) {
                   enemy.x = nextX;
                   enemy.y = nextY;
+                  break;
                 }
               }
+              if (enemy.x === vm.player.x && enemy.y === vm.player.y) {
+                handlePlayerHit("Enemy collision!");
+              }
             });
-            if (vm.player.health <= 0) {
-              vm.log.unshift("You have been overwhelmed. Restart to try again.");
-              vm.paused = true;
-            }
             updateBoard();
           }
 
-          function checkWaveClear() {
-            if (vm.enemies.length === 0) {
-              vm.level += 1;
-              vm.wave += 1;
-              vm.player.xp = 0;
-              vm.player.xpToLevel = Math.floor(vm.player.xpToLevel * 1.25);
-              vm.player.health = Math.min(
-                vm.player.maxHealth,
-                vm.player.health + 20 + vm.level * 2
-              );
-              vm.player.ammo += 4;
-              vm.log.unshift("Arena cleared! Level up achieved.");
-              vm.spawnWave();
-            }
-          }
-
-          function distance(a, b) {
-            return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
-          }
-
-          function cellsInRange(x, y, range) {
-            const cells = [];
-            for (let row = 0; row < size; row += 1) {
-              for (let col = 0; col < size; col += 1) {
-                if (Math.max(Math.abs(col - x), Math.abs(row - y)) <= range) {
-                  cells.push({ x: col, y: row });
-                }
+          function handlePlayerHit(message) {
+            vm.player.health -= 30;
+            vm.log.unshift(message);
+            if (vm.player.health <= 0) {
+              vm.player.lives -= 1;
+              if (vm.player.lives <= 0) {
+                vm.log.unshift("Game over. Restart to try again.");
+                vm.paused = true;
+                return;
               }
+              vm.player.health = vm.player.maxHealth;
+              vm.player.x = 1;
+              vm.player.y = 1;
+              vm.log.unshift("Life lost. Resetting position.");
             }
-            return cells;
           }
 
           function shuffle(array) {
@@ -738,9 +699,6 @@
               case "KeyD":
                 movePlayer(1, 0);
                 break;
-              case "Space":
-                shoot();
-                break;
               case "KeyB":
                 dropBomb();
                 break;
@@ -757,31 +715,79 @@
           $document.on("keydown", handleKey);
           $document.on("keyup", releaseKey);
 
-          const enemyInterval = $interval(enemyTurn, 1400);
-          const autoAttackInterval = $interval(() => {
+          const enemyInterval = $interval(enemyTurn, 900);
+          const bombInterval = $interval(() => {
             if (vm.paused) {
               return;
             }
-            if (vm.player.ammo <= 0) {
-              return;
+            vm.bombs.forEach((bomb) => {
+              bomb.timer -= 1;
+            });
+            const detonations = vm.bombs.filter((bomb) => bomb.timer <= 0);
+            if (detonations.length) {
+              detonations.forEach((bomb) => explodeBomb(bomb));
+              vm.bombs = vm.bombs.filter((bomb) => bomb.timer > 0);
             }
-            const targets = vm.enemies.filter(
-              (enemy) => distance(enemy, vm.player) <= vm.player.range
-            );
-            if (targets.length) {
-              shoot();
-            }
-          }, 900);
+            vm.explosions.forEach((blast) => {
+              blast.timer -= 1;
+            });
+            vm.explosions = vm.explosions.filter((blast) => blast.timer > 0);
+            updateBoard();
+          }, 300);
 
           $scope.$on("$destroy", () => {
             $interval.cancel(enemyInterval);
-            $interval.cancel(autoAttackInterval);
+            $interval.cancel(bombInterval);
             $document.off("keydown", handleKey);
             $document.off("keyup", releaseKey);
           });
 
           refreshUpgrades();
-          vm.spawnWave();
+          vm.spawnStage();
+
+          function explodeBomb(bomb) {
+            const blastCells = [{ x: bomb.x, y: bomb.y }];
+            const directions = [
+              { x: 1, y: 0 },
+              { x: -1, y: 0 },
+              { x: 0, y: 1 },
+              { x: 0, y: -1 },
+            ];
+            directions.forEach((direction) => {
+              for (let step = 1; step <= bomb.power; step += 1) {
+                const target = { x: bomb.x + direction.x * step, y: bomb.y + direction.y * step };
+                if (vm.walls.some((wall) => wall.x === target.x && wall.y === target.y)) {
+                  break;
+                }
+                blastCells.push(target);
+                const crateIndex = vm.crates.findIndex(
+                  (crate) => crate.x === target.x && crate.y === target.y
+                );
+                if (crateIndex >= 0) {
+                  vm.crates.splice(crateIndex, 1);
+                  break;
+                }
+              }
+            });
+            blastCells.forEach((cell) => {
+              vm.explosions.push({ x: cell.x, y: cell.y, timer: 2 });
+              vm.enemies = vm.enemies.filter((enemy) => enemy.x !== cell.x || enemy.y !== cell.y);
+              if (vm.player.x === cell.x && vm.player.y === cell.y) {
+                handlePlayerHit("Caught in explosion!");
+              }
+            });
+            vm.log.unshift("Bomb detonated!");
+            checkStageClear();
+          }
+
+          function checkStageClear() {
+            if (vm.enemies.length === 0) {
+              vm.stage += 1;
+              vm.player.health = Math.min(vm.player.maxHealth, vm.player.health + 15);
+              vm.log.unshift("Stage cleared! Advancing.");
+              vm.spawnStage();
+            }
+          }
         });
     </script>
   </body>
