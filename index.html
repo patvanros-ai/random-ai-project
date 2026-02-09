@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hello World</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top, #f0f4ff 0%, #ffffff 45%, #eef7ff 100%);
+        color: #0f172a;
+      }
+
+      .card {
+        width: min(720px, 90vw);
+        padding: 3.5rem 3rem;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        background: #111827;
+        color: #f8fafc;
+      }
+
+      h1 {
+        font-size: clamp(2.5rem, 4vw, 4rem);
+        margin: 1.5rem 0 0.75rem;
+        line-height: 1.1;
+      }
+
+      p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #475569;
+        margin: 0 0 2rem;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.9rem 1.6rem;
+        border-radius: 999px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .button.primary {
+        background: linear-gradient(120deg, #2563eb, #22d3ee);
+        color: white;
+        box-shadow: 0 12px 25px rgba(37, 99, 235, 0.3);
+      }
+
+      .button.secondary {
+        border: 1px solid #cbd5f5;
+        color: #1e293b;
+        background: white;
+      }
+
+      .button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      }
+
+      .footer {
+        margin-top: 2.5rem;
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <span class="badge">Hello World</span>
+      <h1>Build something delightful.</h1>
+      <p>
+        This is a modern, minimal landing page starter. Clean typography, soft glassmorphism, and
+        subtle gradients make “Hello World” feel like a fresh product launch.
+      </p>
+      <div class="actions">
+        <a class="button primary" href="https://www.example.com">Get started</a>
+        <a class="button secondary" href="https://www.example.com">View docs</a>
+      </div>
+      <div class="footer">Designed for a crisp first impression.</div>
+    </main>
+  </body>
+</html>
